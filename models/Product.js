@@ -76,9 +76,7 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-productSchema.index({ code: 1 });
-productSchema.index({ sku: 1 });
+// Indexes (code and sku already have unique, so Mongoose creates those)
 productSchema.index({ category: 1 });
 productSchema.index({ isActive: 1 });
 

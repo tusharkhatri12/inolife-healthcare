@@ -103,10 +103,7 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Indexes for better query performance
-userSchema.index({ username: 1 });
-userSchema.index({ email: 1 });
-userSchema.index({ employeeId: 1 });
+// Indexes (username, email, employeeId already have unique: true so Mongoose creates those indexes)
 userSchema.index({ role: 1 });
 userSchema.index({ managerId: 1 });
 
