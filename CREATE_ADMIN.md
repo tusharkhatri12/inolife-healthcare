@@ -96,7 +96,56 @@ You should receive a JWT token in the response.
 
 ---
 
-## Quick Setup Script
+## Create Admin When Backend is on Render (MongoDB Atlas)
+
+Your backend is at **https://inolife-backend.onrender.com**. Use one of these:
+
+### Node.js (works on Windows, Mac, Linux, Render Shell)
+
+From the project root:
+
+```bash
+node scripts/create-admin.js
+```
+
+To target a different backend:
+
+```bash
+API_URL=http://localhost:3000 node scripts/create-admin.js
+```
+
+### Bash (Mac, Linux, or Render Shell)
+
+```bash
+chmod +x scripts/create-admin-render.sh
+./scripts/create-admin-render.sh
+```
+
+With custom backend:
+
+```bash
+API_URL=http://localhost:3000 ./scripts/create-admin-render.sh
+```
+
+### PowerShell (Windows)
+
+From the project root:
+
+```powershell
+.\create-admin.ps1
+```
+
+By default it uses `https://inolife-backend.onrender.com`. For local backend:
+
+```powershell
+$env:API_URL = "http://localhost:3000"; .\create-admin.ps1
+```
+
+**Note:** On Render’s free tier the first request can take 30–60 seconds while the service wakes. If the script times out, run it again.
+
+---
+
+## Quick Setup Script (legacy local)
 
 Save this as `create-admin.ps1` and run it:
 

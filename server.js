@@ -7,9 +7,6 @@ const errorHandler = require('./middleware/errorHandler');
 // Load env vars
 dotenv.config();
 
-// Connect to database
-connectDB();
-
 // Initialize Express app
 const app = express();
 
@@ -51,12 +48,17 @@ app.use('/api/stockists', require('./routes/stockists'));
 app.use('/api/schemes', require('./routes/schemes'));
 app.use('/api/sales', require('./routes/sales'));
 
-// Health check route
+// Health check route (includes DB status so you can verify persistence)
 app.get('/api/health', (req, res) => {
+  const mongoose = require('mongoose');
+  const dbState = mongoose.connection.readyState;
+  const stateNames = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
   res.status(200).json({
     success: true,
     message: 'Server is running',
     timestamp: new Date().toISOString(),
+    database: stateNames[dbState] || 'unknown',
+    databaseOk: dbState === 1,
   });
 });
 
@@ -80,16 +82,25 @@ app.use((req, res) => {
 // Error handler middleware (must be last)
 app.use(errorHandler);
 
-// Start server
+// Start server only after MongoDB is connected
 const PORT = process.env.PORT || 3000;
 
-const server = app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+    const server = app.listen(PORT, () => {
+      console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      console.log('MongoDB connected – data will be persisted');
+    });
+    // Handle unhandled promise rejections
+    process.on('unhandledRejection', (err) => {
+      console.error('Unhandled Rejection:', err.message);
+      server.close(() => process.exit(1));
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err.message);
+    process.exit(1);
+  }
+};
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.log(`Error: ${err.message}`);
-  // Close server & exit process
-  server.close(() => process.exit(1));
-});
+startServer();
