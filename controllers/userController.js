@@ -227,6 +227,11 @@ exports.createMR = async (req, res, next) => {
       role: 'MR',
       isActive: true,
     };
+    // Do not set email for MRs (optional; avoid empty string to prevent unique-index issues)
+    const emailVal = req.body.email ? String(req.body.email).trim() : '';
+    if (emailVal && /^\S+@\S+\.\S+$/.test(emailVal)) {
+      payload.email = emailVal.toLowerCase();
+    }
 
     // Managers can only assign MRs to themselves
     if (req.user.role === 'Manager') {

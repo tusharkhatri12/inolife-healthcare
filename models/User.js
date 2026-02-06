@@ -17,8 +17,9 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      // Optional for MRs – login is via username (mobile)
+      // Optional for MRs – login is via username (mobile). sparse: allow multiple users with no email
       unique: true,
+      sparse: true,
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
