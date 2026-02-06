@@ -185,7 +185,12 @@ const AddSalesScreen = ({ navigation }) => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={true}
+      >
         <Card style={styles.card}>
           <Card.Content>
             <Text variant="titleMedium" style={styles.sectionTitle}>
@@ -243,19 +248,24 @@ const AddSalesScreen = ({ navigation }) => {
               const unitPrice = stockistUnitPrice(line.mrp);
               return (
                 <View key={index} style={styles.lineWrap}>
-                  <View style={styles.lineRow}>
+                  <View style={styles.lineProductRow}>
                     <View style={styles.pickerWrap}>
                       <Picker
                         selectedValue={line.productId}
                         onValueChange={(v) => setLineProduct(index, v)}
                         style={styles.picker}
-                        prompt="Product"
+                        prompt="Select product"
                       >
                         {products.map((p) => (
                           <Picker.Item key={p._id} label={`${p.name} (${p.code || ''})`} value={p._id} />
                         ))}
                       </Picker>
                     </View>
+                    <TouchableOpacity onPress={() => removeLine(index)} style={styles.removeBtn}>
+                      <Ionicons name="close-circle" size={28} color={colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.lineInputRow}>
                     <TextInput
                       label="Qty"
                       value={line.quantity}
@@ -274,16 +284,7 @@ const AddSalesScreen = ({ navigation }) => {
                       dense
                       style={styles.qtyInput}
                     />
-                    <TouchableOpacity onPress={() => removeLine(index)} style={styles.removeBtn}>
-                      <Ionicons name="close-circle" size={28} color={colors.error} />
-                    </TouchableOpacity>
-                  </View>
-                  <View style={styles.valueRow}>
-                    {unitPrice != null ? (
-                      <Text variant="bodySmall" style={styles.rateText}>
-                        Rate (27.5% off): ₹{unitPrice.toFixed(2)} → Value: ₹{line.value}
-                      </Text>
-                    ) : (
+                    {unitPrice == null ? (
                       <TextInput
                         label="Value (₹)"
                         value={line.value}
@@ -293,7 +294,14 @@ const AddSalesScreen = ({ navigation }) => {
                         dense
                         style={styles.valueInput}
                       />
-                    )}
+                    ) : null}
+                  </View>
+                  <View style={styles.valueRow}>
+                    {unitPrice != null ? (
+                      <Text variant="bodySmall" style={styles.rateText}>
+                        Rate (27.5% off): ₹{unitPrice.toFixed(2)} → Value: ₹{line.value}
+                      </Text>
+                    ) : null}
                   </View>
                 </View>
               );
@@ -358,16 +366,41 @@ const styles = StyleSheet.create({
   sectionTitle: { marginBottom: 8 },
   label: { fontSize: 12, color: colors.dark, marginBottom: 4 },
   input: { marginBottom: 8 },
-  pickerWrap: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, marginBottom: 12 },
+  pickerWrap: {
+    flex: 1,
+    minWidth: 0,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    marginBottom: 8,
+  },
   picker: { minHeight: 48 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  lineWrap: { marginBottom: 12 },
-  lineRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  valueRow: { marginLeft: 0 },
+  lineWrap: {
+    marginBottom: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    backgroundColor: colors.white,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  lineProductRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  lineInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  valueRow: { marginTop: 4 },
   rateText: { color: '#666', marginTop: 2 },
-  qtyInput: { width: 64, marginHorizontal: 2 },
-  valueInput: { width: 100, marginHorizontal: 2 },
-  removeBtn: { padding: 4 },
+  qtyInput: { minWidth: 70, flex: 1, maxWidth: 90 },
+  valueInput: { minWidth: 80, flex: 1, maxWidth: 110 },
+  removeBtn: { padding: 8, marginLeft: 4 },
   total: { marginTop: 8, fontWeight: 'bold' },
   errorText: { color: colors.error, marginBottom: 8 },
   submitBtn: { marginTop: 8 },

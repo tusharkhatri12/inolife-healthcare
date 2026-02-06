@@ -64,30 +64,28 @@ const DoctorsScreen = ({ navigation }) => {
       style={styles.card}
       onPress={() => navigation.navigate('DoctorDetail', { doctorId: item._id })}
     >
-      <Card.Content>
-        <View style={styles.cardHeader}>
-          <Text variant="titleMedium" style={styles.doctorName}>
-            {item.name}
-          </Text>
-          <View style={styles.badgeRow}>
-            {item.category && (
-              <Chip
-                style={[styles.categoryChip, { backgroundColor: getCategoryColor(item.category) }]}
-                textStyle={styles.categoryText}
-              >
-                {item.category}
-              </Chip>
-            )}
+      <Card.Content style={styles.cardContent}>
+        <Text variant="titleMedium" style={styles.doctorName}>
+          {item.name}
+        </Text>
+        <View style={styles.badgeRow}>
+          {item.category && (
             <Chip
-              style={[
-                styles.approvalChip,
-                { backgroundColor: item.isApproved === false ? colors.warning : colors.success },
-              ]}
-              textStyle={styles.approvalChipText}
+              style={[styles.categoryChip, { backgroundColor: getCategoryColor(item.category) }]}
+              textStyle={styles.categoryText}
             >
-              {item.isApproved === false ? 'Pending Approval' : 'Approved'}
+              Cat. {item.category}
             </Chip>
-          </View>
+          )}
+          <Chip
+            style={[
+              styles.approvalChip,
+              { backgroundColor: item.isApproved === false ? colors.warning : colors.success },
+            ]}
+            textStyle={styles.approvalChipText}
+          >
+            {item.isApproved === false ? 'Pending' : 'Approved'}
+          </Chip>
         </View>
         <Text variant="bodyMedium" style={styles.specialization}>
           {item.specialization}
@@ -166,35 +164,40 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 12,
     elevation: 2,
+    overflow: 'hidden',
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+  cardContent: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   doctorName: {
     fontWeight: 'bold',
-    flex: 1,
+    marginBottom: 8,
   },
   badgeRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    marginBottom: 8,
   },
   categoryChip: {
-    height: 24,
+    height: 26,
+    minWidth: 48,
   },
   categoryText: {
     color: colors.white,
     fontSize: 12,
+    fontWeight: '600',
   },
   approvalChip: {
-    height: 22,
+    height: 26,
+    minWidth: 70,
   },
   approvalChipText: {
     color: colors.white,
-    fontSize: 11,
+    fontSize: 12,
+    fontWeight: '600',
   },
   specialization: {
     color: colors.dark,

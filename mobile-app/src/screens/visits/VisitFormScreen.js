@@ -70,6 +70,7 @@ const VisitFormScreen = ({ route, navigation }) => {
   const [purpose, setPurpose] = useState(PURPOSES[0]);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [productDropdownValue, setProductDropdownValue] = useState('');
+  const [productPickerModalVisible, setProductPickerModalVisible] = useState(false);
   const [notes, setNotes] = useState('');
   const [doctorFeedback, setDoctorFeedback] = useState('');
 
@@ -316,12 +317,14 @@ const VisitFormScreen = ({ route, navigation }) => {
     });
   };
 
-  const handleAddProductFromDropdown = () => {
-    if (!productDropdownValue) return;
-    const exists = selectedProducts.some((p) => p.productId === productDropdownValue);
+  const handleAddProductFromDropdown = (productId) => {
+    const id = productId || productDropdownValue;
+    if (!id) return;
+    const exists = selectedProducts.some((p) => p.productId === id);
     if (!exists) {
-      setSelectedProducts((prev) => [...prev, { productId: productDropdownValue, quantity: 0, notes: '' }]);
+      setSelectedProducts((prev) => [...prev, { productId: id, quantity: 0, notes: '' }]);
       setProductDropdownValue('');
+      setProductPickerModalVisible(false);
     }
   };
 
@@ -570,6 +573,9 @@ const VisitFormScreen = ({ route, navigation }) => {
           style={styles.searchInput}
           placeholder="Type to search..."
         />
+        <Text variant="labelMedium" style={styles.doctorListLabel}>
+          Tap a doctor to select
+        </Text>
         <View style={styles.doctorListContainer}>
           <FlatList
             data={filteredDoctors}
@@ -584,6 +590,12 @@ const VisitFormScreen = ({ route, navigation }) => {
             renderItem={({ item }) => {
               const isSelected = selectedDoctor === item._id;
               const isUnapproved = item.isApproved === false;
+              const getCategoryColor = (cat) => {
+                if (cat === 'A') return colors.error;
+                if (cat === 'B') return colors.warning;
+                if (cat === 'C') return colors.success;
+                return colors.dark;
+              };
               return (
                 <TouchableOpacity
                   activeOpacity={0.7}
@@ -591,19 +603,45 @@ const VisitFormScreen = ({ route, navigation }) => {
                   style={[styles.doctorListItem, isSelected && styles.doctorListItemSelected]}
                 >
                   <View style={styles.doctorListContent}>
-                    <Text variant="titleMedium" numberOfLines={1}>
-                      {item.name}
-                      {isUnapproved ? ' (Pending approval)' : ''}
-                    </Text>
+                    <View style={styles.doctorListRow}>
+                      <Text variant="titleMedium" style={styles.doctorListName} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      {isSelected && (
+                        <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                      )}
+                    </View>
+                    <View style={styles.doctorListBadges}>
+                      {item.category && (
+                        <View
+                          style={[
+                            styles.doctorListCategoryBadge,
+                            { backgroundColor: getCategoryColor(item.category) },
+                          ]}
+                        >
+                          <Text style={styles.doctorListBadgeText}>Cat. {item.category}</Text>
+                        </View>
+                      )}
+                      <View
+                        style={[
+                          styles.doctorListStatusBadge,
+                          {
+                            backgroundColor: isUnapproved ? colors.warning : colors.success,
+                          },
+                        ]}
+                      >
+                        <Text style={styles.doctorListBadgeText}>
+                          {isUnapproved ? 'Pending' : 'Approved'}
+                        </Text>
+                      </View>
+                    </View>
                     <Text variant="bodySmall" style={styles.doctorListMeta}>
                       {item.specialization}
+                      {item.area ? ` • ${item.area}` : ''}
                       {item.city ? ` • ${item.city}` : ''}
                       {item.clinicName ? ` • ${item.clinicName}` : ''}
                     </Text>
                   </View>
-                  {isSelected && (
-                    <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
-                  )}
                 </TouchableOpacity>
               );
             }}
@@ -929,34 +967,76 @@ const VisitFormScreen = ({ route, navigation }) => {
           </Text>
 
           <Text variant="labelMedium" style={styles.productDropdownLabel}>
-            Select product (available)
+            Add product (tap to select)
           </Text>
-          <View style={styles.productDropdownContainer}>
-            <Picker
-              selectedValue={productDropdownValue}
-              onValueChange={setProductDropdownValue}
-              style={styles.productPicker}
-              prompt="Select product"
+          <TouchableOpacity
+            style={styles.productSelectTouchable}
+            onPress={() => setProductPickerModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Text variant="bodyLarge" style={styles.productSelectTouchableText}>
+              {availableProducts.length === 0
+                ? 'All products already added'
+                : 'Tap to choose a product...'}
+            </Text>
+            <Ionicons name="chevron-down" size={22} color={colors.placeholder} />
+          </TouchableOpacity>
+          <Modal
+            visible={productPickerModalVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setProductPickerModalVisible(false)}
+          >
+            <TouchableOpacity
+              style={styles.productPickerModalOverlay}
+              activeOpacity={1}
+              onPress={() => setProductPickerModalVisible(false)}
             >
-              <Picker.Item label="Choose a product..." value="" />
-              {availableProducts.map((p) => (
-                <Picker.Item
-                  key={p._id}
-                  label={`${p.name} (${p.code || ''})`}
-                  value={p._id}
-                />
-              ))}
-            </Picker>
-            <Button
-              mode="outlined"
-              onPress={handleAddProductFromDropdown}
-              disabled={!productDropdownValue}
-              style={styles.addProductButton}
-              compact
-            >
-              Add
-            </Button>
-          </View>
+              <View
+                style={styles.productPickerModalContent}
+                onStartShouldSetResponder={() => true}
+              >
+                <View style={styles.productPickerModalHeader}>
+                  <Text variant="titleMedium" style={styles.productPickerModalTitle}>
+                    Select product
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setProductPickerModalVisible(false)}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  >
+                    <Ionicons name="close" size={28} color={colors.dark} />
+                  </TouchableOpacity>
+                </View>
+                {availableProducts.length === 0 ? (
+                  <Text variant="bodyMedium" style={styles.productPickerModalEmpty}>
+                    No more products to add. All are already selected.
+                  </Text>
+                ) : (
+                  <FlatList
+                    data={availableProducts}
+                    keyExtractor={(item) => item._id}
+                    style={styles.productPickerModalList}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={styles.productPickerModalItem}
+                        onPress={() => handleAddProductFromDropdown(item._id)}
+                        activeOpacity={0.7}
+                      >
+                        <Text variant="bodyLarge" style={styles.productPickerModalItemName}>
+                          {item.name || 'Unnamed'}
+                        </Text>
+                        {item.code ? (
+                          <Text variant="bodySmall" style={styles.productPickerModalItemCode}>
+                            {item.code}
+                          </Text>
+                        ) : null}
+                      </TouchableOpacity>
+                    )}
+                  />
+                )}
+              </View>
+            </TouchableOpacity>
+          </Modal>
 
           {selectedProducts.length > 0 ? (
             <>
@@ -964,21 +1044,24 @@ const VisitFormScreen = ({ route, navigation }) => {
                 Already selected products
               </Text>
               <View style={styles.selectedProductsList}>
-                {selectedProducts.map((sel) => {
-                  const product = products.find((p) => p._id === sel.productId);
-                  const selectedProduct = selectedProducts.find((p) => p.productId === sel.productId);
+                {selectedProducts.map((sel, index) => {
+                  const productId = sel && sel.productId != null ? String(sel.productId) : '';
+                  const product = products.find((p) => p._id === productId);
+                  const qty = sel.quantity != null ? Number(sel.quantity) : 0;
+                  const notes = sel.notes != null ? String(sel.notes) : '';
                   return (
-                    <View key={sel.productId} style={styles.selectedProductRow}>
+                    <View key={productId || `product-${index}`} style={styles.selectedProductRow}>
                       <View style={styles.selectedProductInfo}>
                         <Text variant="titleSmall">
-                          {product?.name || sel.productId} {product?.code ? `(${product.code})` : ''}
+                          {product?.name || productId || 'Product'}{' '}
+                          {product?.code ? `(${product.code})` : ''}
                         </Text>
                         <View style={styles.selectedProductInputs}>
                           <TextInput
                             label="Qty"
-                            value={selectedProduct?.quantity?.toString() || '0'}
+                            value={String(qty)}
                             onChangeText={(t) =>
-                              handleProductQuantityChange(sel.productId, t)
+                              handleProductQuantityChange(productId, t)
                             }
                             keyboardType="numeric"
                             mode="outlined"
@@ -987,9 +1070,9 @@ const VisitFormScreen = ({ route, navigation }) => {
                           />
                           <TextInput
                             label="Notes"
-                            value={selectedProduct?.notes || ''}
+                            value={notes}
                             onChangeText={(t) =>
-                              handleProductNotesChange(sel.productId, t)
+                              handleProductNotesChange(productId, t)
                             }
                             mode="outlined"
                             dense
@@ -998,7 +1081,7 @@ const VisitFormScreen = ({ route, navigation }) => {
                         </View>
                       </View>
                       <TouchableOpacity
-                        onPress={() => handleRemoveProduct(sel.productId)}
+                        onPress={() => handleRemoveProduct(productId)}
                         style={styles.removeProductBtn}
                       >
                         <Ionicons name="close-circle" size={28} color={colors.error} />
@@ -1405,33 +1488,75 @@ const styles = StyleSheet.create({
   searchInput: {
     marginBottom: 12,
   },
+  doctorListLabel: {
+    color: colors.dark,
+    marginBottom: 8,
+    fontWeight: '600',
+  },
   doctorListContainer: {
-    maxHeight: 220,
+    minHeight: 200,
+    maxHeight: 320,
+    backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: colors.placeholder,
-    borderRadius: 4,
+    borderColor: colors.primary,
+    borderRadius: 8,
     marginBottom: 16,
+    overflow: 'hidden',
   },
   doctorList: {
     flexGrow: 0,
   },
   doctorListItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.placeholder,
   },
   doctorListItemSelected: {
-    backgroundColor: colors.primary + '15',
+    backgroundColor: colors.primary + '18',
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
   },
   doctorListContent: {
     flex: 1,
   },
+  doctorListRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  doctorListName: {
+    fontWeight: '600',
+    color: colors.dark,
+    flex: 1,
+  },
+  doctorListBadges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  doctorListCategoryBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  doctorListStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  doctorListBadgeText: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: '600',
+  },
   doctorListMeta: {
     color: colors.placeholder,
     marginTop: 2,
+    fontSize: 13,
   },
   emptyListText: {
     padding: 16,
@@ -1485,6 +1610,69 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 4,
     color: colors.dark,
+  },
+  productSelectTouchable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: colors.placeholder,
+    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: colors.white,
+  },
+  productSelectTouchableText: {
+    color: colors.dark,
+    flex: 1,
+  },
+  productPickerModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  productPickerModalContent: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '70%',
+    paddingBottom: 24,
+  },
+  productPickerModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.placeholder,
+  },
+  productPickerModalTitle: {
+    fontWeight: '600',
+    color: colors.dark,
+  },
+  productPickerModalEmpty: {
+    padding: 24,
+    color: colors.placeholder,
+    textAlign: 'center',
+  },
+  productPickerModalList: {
+    maxHeight: 360,
+  },
+  productPickerModalItem: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.placeholder,
+  },
+  productPickerModalItemName: {
+    color: colors.dark,
+    fontWeight: '500',
+  },
+  productPickerModalItemCode: {
+    color: colors.placeholder,
+    marginTop: 2,
   },
   productDropdownContainer: {
     flexDirection: 'row',

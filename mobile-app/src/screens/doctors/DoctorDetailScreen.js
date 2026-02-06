@@ -59,10 +59,10 @@ const DoctorDetailScreen = ({ route, navigation }) => {
       <View style={styles.content}>
         <Card style={styles.card}>
           <Card.Content>
-            <View style={styles.header}>
-              <Text variant="headlineSmall" style={styles.name}>
-                {doctor.name}
-              </Text>
+            <Text variant="headlineSmall" style={styles.name}>
+              {doctor.name}
+            </Text>
+            <View style={styles.badgeRow}>
               {doctor.category && (
                 <Chip
                   style={[
@@ -74,6 +74,18 @@ const DoctorDetailScreen = ({ route, navigation }) => {
                   Category {doctor.category}
                 </Chip>
               )}
+              <Chip
+                style={[
+                  styles.statusChip,
+                  {
+                    backgroundColor:
+                      doctor.isApproved === false ? colors.warning : colors.success,
+                  },
+                ]}
+                textStyle={styles.statusChipText}
+              >
+                {doctor.isApproved === false ? 'Pending Approval' : 'Approved'}
+              </Chip>
             </View>
             <Text variant="titleMedium" style={styles.specialization}>
               {doctor.specialization}
@@ -203,22 +215,34 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
   name: {
     fontWeight: 'bold',
-    flex: 1,
+    marginBottom: 10,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
   },
   categoryChip: {
     height: 28,
+    minWidth: 90,
   },
   categoryText: {
     color: colors.white,
     fontSize: 12,
+    fontWeight: '600',
+  },
+  statusChip: {
+    height: 28,
+    minWidth: 100,
+  },
+  statusChipText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: '600',
   },
   specialization: {
     color: colors.primary,
