@@ -32,10 +32,12 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.inolife.mrapp",
+      "versionCode": 1,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
         "INTERNET",
         "ACCESS_NETWORK_STATE"
       ]
@@ -49,7 +51,14 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow INOLIFE MR App to use your location to track visits."
         }
-      ]
-    ]
+      ],
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3a08d402-d6cd-4702-8b94-acabaf760d0e"
+      }
+    },
+    "owner": "tusharkhatri321"
   }
 }

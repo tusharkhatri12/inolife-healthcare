@@ -6,29 +6,44 @@ const generateToken = require('../utils/generateToken');
 // @access  Public (Owner can register, others need Owner approval)
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, phone, password, role, employeeId, territory, managerId } = req.body;
+    const { name, email, phone, password, role, employeeId, territory, managerId, username: bodyUsername } = req.body;
 
-    // Check if user exists
-    const userExists = await User.findOne({ email });
+    // Owner/Manager often register with email only; use email as username for login if username not provided
+    const username = bodyUsername && bodyUsername.trim() ? bodyUsername.trim() : (email && email.trim() ? email.trim().toLowerCase() : null);
+
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email or username is required',
+      });
+    }
+
+    // Check if user exists (by email or username)
+    const orClauses = [{ username }];
+    if (email && String(email).trim()) orClauses.push({ email: String(email).trim().toLowerCase() });
+    const userExists = await User.findOne({ $or: orClauses });
 
     if (userExists) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists with this email',
+        message: 'User already exists with this email or username',
       });
     }
 
-    // Create user
-    const user = await User.create({
+    // Build create payload: username required; email and phone required by schema (use email/username as fallback)
+    const createPayload = {
       name,
-      email,
-      phone,
+      username,
       password,
       role,
+      phone: (phone != null && String(phone).trim()) ? String(phone).trim() : username,
       employeeId,
       territory,
       managerId: managerId || undefined,
-    });
+    };
+    if (email && String(email).trim()) createPayload.email = String(email).trim().toLowerCase();
+
+    const user = await User.create(createPayload);
 
     // Generate token
     const token = generateToken(user._id);

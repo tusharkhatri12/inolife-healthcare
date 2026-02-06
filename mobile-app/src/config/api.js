@@ -1,13 +1,9 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Update this with your backend URL
-// For physical device: Use your computer's IP address (found via ipconfig)
-// For Android emulator: Use 'http://10.0.2.2:3000/api'
-// For iOS simulator: Use 'http://localhost:3000/api'
-const API_BASE_URL = __DEV__ 
-  ? 'http://192.168.31.56:3000/api'  // Your computer's IP address
-  : 'https://your-production-api.com/api';
+// Backend API base URL (deployed on Render)
+// For local backend: use 'http://YOUR_IP:3000/api' or 'http://localhost:3000/api'
+const API_BASE_URL = 'https://inolife-backend.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
