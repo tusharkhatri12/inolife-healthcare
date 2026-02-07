@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { format, subDays } from 'date-fns';
 import { salesService } from '../services/salesService';
 import { visitService } from '../services/visitService';
 import { userService } from '../services/userService';
 import { doctorService } from '../services/doctorService';
 import { stockistService } from '../services/stockistService';
-import { FiDollarSign, FiUser, FiPackage, FiTrendingUp, FiX } from 'react-icons/fi';
+import { FiDollarSign, FiUser, FiPackage, FiTrendingUp, FiX, FiList, FiBarChart2 } from 'react-icons/fi';
 
 const TABS = ['doctor', 'stockist', 'mr'];
 
@@ -154,11 +155,20 @@ const SalesOverview = () => {
 
   const grandTotal = sales.reduce((sum, s) => sum + (s.totalValue || 0), 0);
 
+  const location = useLocation();
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800">Sales Overview</h1>
-        <p className="text-gray-600 mt-2">Doctor, stockist & MR-wise sales. Click a row to see entries.</p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Sales Overview</h1>
+          <p className="text-gray-600 mt-2">Doctor, stockist & MR-wise sales. Click a row to see entries.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link to="/sales" className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/sales' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}><FiList size={16} /> List</Link>
+          <Link to="/sales/overview" className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/sales/overview' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}><FiBarChart2 size={16} /> Overview</Link>
+          <Link to="/sales/monthly" className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/sales/monthly' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}><FiDollarSign size={16} /> Monthly report</Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">

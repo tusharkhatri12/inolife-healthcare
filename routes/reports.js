@@ -7,6 +7,7 @@ const {
   getMRLeaderboard,
   getTodaysFieldActivity,
   getTodaysVisitSummary,
+  getMonthlySalesReport,
 } = require('../controllers/reportController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -31,5 +32,8 @@ router.get('/todays-field-activity', getTodaysFieldActivity);
 
 // Today's Visit Summary (total planned, met, not met, reasons)
 router.get('/todays-visit-summary', getTodaysVisitSummary);
+
+// Monthly Primary/Secondary sales (combined MR + Admin)
+router.get('/sales-monthly', getMonthlySalesReport);
 
 module.exports = router;

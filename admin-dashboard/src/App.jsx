@@ -15,6 +15,8 @@ import PendingDoctorApprovals from './pages/PendingDoctorApprovals';
 import SalesDashboard from './pages/SalesDashboard';
 import Stockists from './pages/Stockists';
 import SalesOverview from './pages/SalesOverview';
+import SalesList from './pages/SalesList';
+import SalesMonthlyReport from './pages/SalesMonthlyReport';
 import Schemes from './pages/Schemes';
 import MRUsers from './pages/MRUsers';
 
@@ -127,7 +129,23 @@ function App() {
         path="/sales"
         element={
           <ProtectedRoute allowedRoles={['Owner', 'Manager']}>
+            <SalesList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sales/overview"
+        element={
+          <ProtectedRoute allowedRoles={['Owner', 'Manager']}>
             <SalesOverview />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sales/monthly"
+        element={
+          <ProtectedRoute allowedRoles={['Owner', 'Manager']}>
+            <SalesMonthlyReport />
           </ProtectedRoute>
         }
       />

@@ -4,6 +4,7 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const BeatPlan = require('../models/beatPlan.model');
 const LocationLog = require('../models/LocationLog');
+const SalesRecord = require('../models/SalesRecord');
 
 // @desc    Daily MR Performance Report
 // @route   GET /api/reports/mr-performance
@@ -993,3 +994,105 @@ exports.getTodaysVisitSummary = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Monthly sales report (Primary + Secondary, combined MR + Admin)
+// @route   GET /api/reports/sales-monthly?saleMonthStart=&saleMonthEnd=
+// @access  Private (Owner, Manager)
+exports.getMonthlySalesReport = async (req, res, next) => {
+  try {
+    const { saleMonthStart, saleMonthEnd } = req.query;
+    const andConditions = [];
+    if (req.user.role === 'Manager') {
+      const mrs = await User.find({ managerId: req.user.id, role: 'MR' }).select('_id');
+      const mrIds = mrs.map((m) => m._id);
+      andConditions.push({ $or: [{ mrId: { $in: mrIds } }, { createdBy: 'ADMIN' }, { mrId: null }] });
+    }
+    if (saleMonthStart || saleMonthEnd) {
+      const monthCond = {};
+      if (saleMonthStart) monthCond.$gte = saleMonthStart;
+      if (saleMonthEnd) monthCond.$lte = saleMonthEnd;
+      if (Object.keys(monthCond).length) {
+        const dateRange = buildSalesDateRange(saleMonthStart, saleMonthEnd);
+        andConditions.push({
+          $or: [
+            { saleMonth: monthCond },
+            { $and: [{ $or: [{ saleMonth: null }, { saleMonth: '' }] }, dateRange] },
+          ],
+        });
+      }
+    }
+    const match = andConditions.length ? { $and: andConditions } : {};
+
+    const sales = await SalesRecord.find(match)
+      .populate('stockistId', 'name city area')
+      .populate('mrId', 'name employeeId')
+      .lean();
+    const withMonth = sales.map((s) => ({
+      ...s,
+      effectiveMonth: s.saleMonth || (s.date ? `${new Date(s.date).getFullYear()}-${String(new Date(s.date).getMonth() + 1).padStart(2, '0')}` : null),
+    }));
+
+    const byMonthType = {};
+    const byMonthStockist = {};
+    const byMonthMR = {};
+    withMonth.forEach((s) => {
+      const m = s.effectiveMonth;
+      if (!m) return;
+      const type = s.saleType || 'SECONDARY';
+      const val = s.totalValue || 0;
+      byMonthType[m] = byMonthType[m] || { PRIMARY: 0, SECONDARY: 0 };
+      byMonthType[m][type] = (byMonthType[m][type] || 0) + val;
+      const stId = s.stockistId?._id || s.stockistId;
+      if (stId) {
+        byMonthStockist[m] = byMonthStockist[m] || {};
+        const stName = s.stockistId?.name || stId;
+        byMonthStockist[m][stId] = byMonthStockist[m][stId] || { name: stName, total: 0 };
+        byMonthStockist[m][stId].total += val;
+      }
+      const mrId = s.mrId?._id || s.mrId;
+      if (mrId && type === 'SECONDARY') {
+        byMonthMR[m] = byMonthMR[m] || {};
+        const mrName = s.mrId?.name || mrId;
+        byMonthMR[m][mrId] = byMonthMR[m][mrId] || { name: mrName, total: 0 };
+        byMonthMR[m][mrId].total += val;
+      }
+    });
+
+    const months = [...new Set(withMonth.map((s) => s.effectiveMonth).filter(Boolean))].sort();
+    const monthlyPrimary = months.map((m) => ({ month: m, value: byMonthType[m]?.PRIMARY || 0 }));
+    const monthlySecondary = months.map((m) => ({ month: m, value: byMonthType[m]?.SECONDARY || 0 }));
+    const stockistMonthly = months.map((m) => ({
+      month: m,
+      stockists: Object.entries(byMonthStockist[m] || {}).map(([id, o]) => ({ stockistId: id, name: o.name, total: o.total })),
+    }));
+    const mrMonthlySecondary = months.map((m) => ({
+      month: m,
+      mrs: Object.entries(byMonthMR[m] || {}).map(([id, o]) => ({ mrId: id, name: o.name, total: o.total })),
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        monthlyPrimary,
+        monthlySecondary,
+        stockistMonthly,
+        mrMonthlySecondary,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+function buildSalesDateRange(saleMonthStart, saleMonthEnd) {
+  const range = {};
+  if (saleMonthStart) {
+    const [y, m] = saleMonthStart.split('-').map(Number);
+    range.$gte = new Date(y, m - 1, 1, 0, 0, 0, 0);
+  }
+  if (saleMonthEnd) {
+    const [y, m] = saleMonthEnd.split('-').map(Number);
+    range.$lte = new Date(y, m, 0, 23, 59, 59, 999);
+  }
+  return Object.keys(range).length ? { date: range } : {};
+}

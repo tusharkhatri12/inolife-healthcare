@@ -6,10 +6,20 @@ const salesRecordSchema = new mongoose.Schema(
       type: Date,
       required: [true, 'Please provide sales date'],
     },
+    // YYYY-MM; mandatory for admin entries; MR entries auto-derived from date
+    saleMonth: {
+      type: String,
+      trim: true,
+    },
+    // PRIMARY = Company → Stockist; SECONDARY = Stockist → Market (MR stockist sales)
+    saleType: {
+      type: String,
+      enum: ['PRIMARY', 'SECONDARY'],
+      default: 'SECONDARY',
+    },
     mrId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Please provide MR ID'],
     },
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -54,6 +64,12 @@ const salesRecordSchema = new mongoose.Schema(
       enum: ['MR_ENTRY', 'ADMIN_ENTRY'],
       required: true,
     },
+    // Who created: ADMIN (dashboard) or MR (app)
+    createdBy: {
+      type: String,
+      enum: ['ADMIN', 'MR'],
+      default: 'MR',
+    },
     remarks: {
       type: String,
       trim: true,
@@ -65,6 +81,8 @@ const salesRecordSchema = new mongoose.Schema(
 );
 
 salesRecordSchema.index({ date: -1 });
+salesRecordSchema.index({ saleMonth: 1 });
+salesRecordSchema.index({ saleType: 1, saleMonth: 1 });
 salesRecordSchema.index({ mrId: 1, date: -1 });
 salesRecordSchema.index({ doctorId: 1, date: -1 });
 salesRecordSchema.index({ stockistId: 1, date: -1 });
